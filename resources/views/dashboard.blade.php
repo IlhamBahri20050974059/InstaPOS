@@ -1,4 +1,17 @@
-@extends('layouts.app')
+@php
+    $userSession = session('user');
+
+    // Ambil role user dari session (sesuaikan nama key 'role' / 'level' dari API kamu)
+    $role = is_array($userSession)
+        ? ($userSession['role'] ?? $userSession['level'] ?? 'cashier')
+        : ($userSession->role ?? $userSession->level ?? 'cashier');
+
+    // Tentukan layout berdasarkan role
+    $layout = (in_array(strtolower($role), ['supervisor', 'spv', 'admin']))
+        ? 'layouts.supervisor'
+        : 'layouts.app';
+@endphp
+@extends($layout)
 
 @section('title', 'Dashboard Analitik')
 
