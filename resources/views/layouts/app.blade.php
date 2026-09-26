@@ -68,9 +68,9 @@
 
                         <!-- 3. Riwayat Penjualan -->
                         <a href="{{ url('/riwayat') }}"
-                           class="flex items-center px-3 py-3 rounded-xl transition text-sm font-medium {{ request()->is('riwayat*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                           class="flex items-center px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('riwayat*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 022 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <span class="ml-3 truncate" x-show="sidebarOpen">Riwayat Penjualan</span>
                         </a>
@@ -89,33 +89,35 @@
     </div>
 
     <!-- Profile Info User (Membaca Session Custom Auth) -->
-    @php
-        // Ambil data user dari session atau objek login
-        $userSession = session('user');
-        $namaUser = is_object($userSession)
-            ? ($userSession->name ?? $userSession->username ?? 'Kasir Utama')
-            : (is_array($userSession) ? ($userSession['name'] ?? $userSession['username'] ?? 'Kasir Utama') : (session('nama') ?? session('username') ?? 'Kasir Utama'));
+@php
+    $userSession = session('user');
 
-        $emailUser = is_object($userSession)
-            ? ($userSession->email ?? 'kasir@minimarket.com')
-            : (is_array($userSession) ? ($userSession['email'] ?? 'kasir@minimarket.com') : (session('email') ?? 'kasir@minimarket.com'));
+    // Ambil Nama / Username (Aman untuk Array maupun Object)
+    $namaUser = is_array($userSession)
+        ? ($userSession['name'] ?? $userSession['username'] ?? 'Kasir Utama')
+        : ($userSession->name ?? $userSession->username ?? 'Kasir Utama');
 
-        $inisial = strtoupper(substr($namaUser, 0, 1));
-    @endphp
+    // Ambil Role
+    $roleUser = is_array($userSession)
+        ? ($userSession['role'] ?? 'Kasir')
+        : ($userSession->role ?? 'Kasir');
 
-    <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-sm shrink-0">
-            {{ $inisial }}
-        </div>
-        <div class="truncate" x-show="sidebarOpen">
-            <p class="text-xs font-semibold text-white truncate">
-                {{ $namaUser }}
-            </p>
-            <p class="text-[10px] text-slate-400 truncate">
-                {{ $emailUser }}
-            </p>
-        </div>
+    $inisial = strtoupper(substr($namaUser, 0, 1));
+@endphp
+
+<div class="flex items-center space-x-3">
+    <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-sm shrink-0">
+        {{ $inisial }}
     </div>
+    <div class="truncate" x-show="sidebarOpen">
+        <p class="text-xs font-semibold text-white truncate">
+            {{ $namaUser }}
+        </p>
+        <p class="text-[10px] text-slate-400 truncate">
+            {{ $roleUser }}
+        </p>
+    </div>
+</div>
 
     <!-- Button Action Logout (Rute Sesuai web.php) -->
     <div x-show="sidebarOpen">
