@@ -58,7 +58,7 @@
                             <span class="ml-3 truncate" x-show="sidebarOpen">Dashboard</span>
                         </a>
 
-                        <!-- 2. Produk (BARU) -->
+                        <!-- 2. Produk -->
                         <a href="{{ url('/produk') }}"
                            class="flex items-center px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('produk*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,7 +67,16 @@
                             <span class="ml-3 truncate" x-show="sidebarOpen">Produk</span>
                         </a>
 
-                        <!-- 3. Supplier (BARU) -->
+                        <!-- 3. Kategori (BARU) -->
+                        <a href="{{ url('/kategori') }}"
+                           class="flex items-center px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('kategori*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                            </svg>
+                            <span class="ml-3 truncate" x-show="sidebarOpen">Kategori</span>
+                        </a>
+
+                        <!-- 4. Supplier -->
                         <a href="{{ url('/supplier') }}"
                            class="flex items-center px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('supplier*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +85,7 @@
                             <span class="ml-3 truncate" x-show="sidebarOpen">Supplier</span>
                         </a>
 
-                        <!-- 4. Pembelian (BARU) -->
+                        <!-- 5. Pembelian -->
                         <a href="{{ url('/pembelian') }}"
                            class="flex items-center px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('pembelian*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +94,7 @@
                             <span class="ml-3 truncate" x-show="sidebarOpen">Pembelian</span>
                         </a>
 
-                        <!-- 5. Penjualan (POS Kasir) -->
+                        <!-- 6. Penjualan (POS Kasir) -->
                         <a href="{{ url('/penjualan') }}"
                            class="flex items-center px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('penjualan*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +103,7 @@
                             <span class="ml-3 truncate" x-show="sidebarOpen">Penjualan (POS)</span>
                         </a>
 
-                        <!-- 6. Riwayat Penjualan (Ikon Diperbaiki) -->
+                        <!-- 7. Riwayat Penjualan -->
                         <a href="{{ url('/riwayat') }}"
                            class="flex items-center px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('riwayat*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
