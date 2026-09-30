@@ -157,7 +157,7 @@
                                 <!-- Kolom Kategori di Tabel Produk -->
 <td class="py-3.5 px-4 text-slate-600">
     <span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold inline-block"
-          x-text="product.category?.name || 'Uncategorized'">
+          x-text="product.category_name || 'Uncategorized'">
     </span>
 </td>
 
