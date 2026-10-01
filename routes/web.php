@@ -24,11 +24,17 @@ Route::middleware([CheckAuth::class])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
-    // Route Penjualan POS
-    Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
+   Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
 
-    // Route Proxy Internal API Produk
-    Route::get('/penjualan/get-products', [PenjualanController::class, 'getProducts'])->name('penjualan.get-products');
+    // Fetch Data Produk & Pelanggan untuk Kasir
+    Route::get('/penjualan/produk', [PenjualanController::class, 'getProducts'])->name('penjualan.produk');
+    Route::get('/penjualan/pelanggan', [PenjualanController::class, 'getCustomers'])->name('penjualan.pelanggan');
+
+    // Submit Transaksi Penjualan ke Server API
+    Route::post('/penjualan', [PenjualanController::class, 'store'])->name('penjualan.store');
+
+    // Cetak Struk PDF
+    Route::get('/penjualan/{id}/cetak-pdf', [PenjualanController::class, 'cetakPdf'])->name('penjualan.cetak-pdf');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
