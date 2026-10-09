@@ -1,183 +1,173 @@
 @php
     $userSession = session('user');
-
-    // Ambil role user dari session (sesuaikan nama key 'role' / 'level' dari API kamu)
     $role = is_array($userSession)
         ? ($userSession['role'] ?? $userSession['level'] ?? 'cashier')
         : ($userSession->role ?? $userSession->level ?? 'cashier');
 
-    // Tentukan layout berdasarkan role
     $layout = (in_array(strtolower($role), ['supervisor', 'spv', 'admin']))
         ? 'layouts.supervisor'
         : 'layouts.app';
 @endphp
 @extends($layout)
 
-@section('title', 'Dashboard Analitik')
+@section('title', 'Dashboard Ringkasan')
+
+@push('styles')
+<!-- CDN Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endpush
 
 @section('content')
-<div class="space-y-6" x-data="dashboardData()">
+<div x-data="dashboardManager()" x-init="init()" class="space-y-6 pb-10">
 
-    <!-- ================= TOP CONTROLS: FILTER PERIODE ================= -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+    <!-- Header & Date Range Filter -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
         <div>
-            <h1 class="text-xl font-bold text-slate-800">Ringkasan Performa Toko</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Pantau omzet, jumlah penjualan, dan tren produk terlaris secara akurat.</p>
+            <h1 class="text-xl font-bold text-slate-800">Dashboard Performa</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Ringkasan statistik dan tren penjualan InstaPOS</p>
         </div>
 
-        <!-- Filter Dropdown (Hari ini / Minggu ini / Bulan ini) -->
-        <div class="flex items-center space-x-2">
-            <label class="text-xs font-semibold text-slate-500">Periode:</label>
-            <select x-model="filterPeriode" @change="updateDashboard()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="today">Hari Ini</option>
-                <option value="week">Minggu Ini</option>
-                <option value="month" selected>Bulan Ini (2026)</option>
-            </select>
+        <div class="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+            <input type="date" x-model="filterFrom" class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <span class="text-xs text-slate-400 font-bold">s/d</span>
+            <input type="date" x-model="filterTo" class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            
+            <button @click="loadData()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" :class="isLoading ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Filter</span>
+            </button>
         </div>
     </div>
 
-    <!-- ================= STAT CARDS RINGKASAN ================= -->
+    <!-- 4 SUMMARY CARDS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <!-- Card 1: Total Omzet -->
+        <!-- Revenue -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
             <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Omzet</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1" x-text="formatRupiah(stats.totalOmzet)"></h3>
-                <span class="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md mt-2 inline-block">↑ +12.5% vs periode lalu</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Omset</span>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-1" x-text="formatRupiah(summary.revenue)"></h3>
             </div>
-            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
         </div>
 
-        <!-- Card 2: Total Transaksi -->
+        <!-- Transactions -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
             <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Jumlah Transaksi</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1" x-text="stats.totalTransaksi + ' Nota'"></h3>
-                <span class="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md mt-2 inline-block">↑ +8.2% transaksi</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Transaksi</span>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-1" x-text="(summary.transaction_count || 0) + ' Transaksi'"></h3>
             </div>
-            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
             </div>
         </div>
 
-        <!-- Card 3: Barang Terjual -->
+        <!-- Items Sold -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
             <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Produk Terjual</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1" x-text="stats.totalProdukTerjual + ' Pcs'"></h3>
-                <span class="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md mt-2 inline-block">↑ +15% item laku</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Produk Terjual</span>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-1" x-text="(summary.items_sold || 0) + ' Pcs'"></h3>
             </div>
-            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
             </div>
         </div>
 
-        <!-- Card 4: Rata-Rata Belanja -->
+        <!-- Average Order Value -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
             <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Rata-rata Nota</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1" x-text="formatRupiah(stats.rataRataNota)"></h3>
-                <span class="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md mt-2 inline-block">Stabil</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rata-rata / Nota</span>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-1" x-text="formatRupiah(summary.average_transaction_value)"></h3>
             </div>
-            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
             </div>
         </div>
-
     </div>
 
-    <!-- ================= AREA GRAFIK (Sesuai Referensi Gambar) ================= -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- GRAFIK TREN PENJUALAN & METODE PEMBAYARAN -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Sales Trend Line Chart (8 COL) -->
+        <div class="lg:col-span-8 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-800">Grafik Tren Penjualan Harian</h2>
+            <div class="relative h-64">
+                <canvas id="salesTrendChart"></canvas>
+            </div>
+        </div>
 
-        <!-- Grafik Bar: Grafik Penjualan Bulanan (2/3 width) -->
-        <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-            <div>
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h3 class="font-bold text-slate-800 text-base">JUMLAH PENJUALAN BULANAN</h3>
-                        <p class="text-xs text-slate-500">Menampilkan tren pendapatan omzet penjualan toko pada tahun 2026.</p>
+        <!-- Payment Methods Doughnut Chart (4 COL) -->
+        <div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 flex flex-col justify-between">
+            <h2 class="text-sm font-bold text-slate-800">Metode Pembayaran</h2>
+            <div class="relative h-48 my-auto">
+                <canvas id="paymentMethodChart"></canvas>
+            </div>
+            <div class="space-y-1.5 pt-3 border-t border-slate-100">
+                <template x-for="pm in paymentMethods" :key="pm.method">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-600 uppercase" x-text="pm.method"></span>
+                        <span class="font-extrabold text-slate-800" x-text="formatRupiah(pm.revenue)"></span>
                     </div>
-                </div>
-                <div class="flex items-baseline space-x-4 my-3">
-                    <span class="text-2xl font-black text-slate-800" x-text="formatRupiah(stats.totalOmzet)"></span>
-                    <span class="text-xs text-emerald-600 font-semibold">● Total Omzet Terakumulasi</span>
-                </div>
-            </div>
-
-            <!-- Canvas Chart.js Bar -->
-            <div class="relative h-64 w-full mt-2">
-                <canvas id="barChartPenjualan"></canvas>
+                </template>
             </div>
         </div>
-
-        <!-- Grafik Pie: Produk Terlaris (1/3 width) -->
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-            <div>
-                <h3 class="font-bold text-slate-800 text-base">PRODUK TERLARIS</h3>
-                <p class="text-xs text-slate-500 mb-4">Berdasarkan kategori produk per tahun 2026.</p>
-            </div>
-
-            <!-- Canvas Chart.js Pie/Donut -->
-            <div class="relative h-56 w-full flex items-center justify-center">
-                <canvas id="pieChartTerlaris"></canvas>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-slate-100 text-center">
-                <p class="text-xs text-slate-400">Kategori Sembako & Minuman mendominasi 70% penjualan.</p>
-            </div>
-        </div>
-
     </div>
 
-    <!-- ================= TABEL RIWAYAT PEMESANAN TERBARU (Sesuai Referensi Gambar) ================= -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-            <div>
-                <h3 class="font-bold text-slate-800 text-base uppercase">Riwayat Pemesanan Terbaru</h3>
-                <p class="text-xs text-slate-500 mt-0.5">Menampilkan 5 riwayat transaksi terakhir di kasir.</p>
+    <!-- PRODUK TERLARIS & TRANSAKSI TERAKHIR -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Top Products List (5 COL) -->
+        <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-800">Top 5 Produk Terlaris</h2>
+            <div class="space-y-3">
+                <template x-for="(tp, idx) in topProducts" :key="tp.product_id">
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 font-black text-xs flex items-center justify-center" x-text="idx + 1"></span>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-800 uppercase" x-text="tp.product_name"></h4>
+                                <span class="text-[10px] font-semibold text-slate-400" x-text="tp.quantity + ' pcs terjual'"></span>
+                            </div>
+                        </div>
+                        <span class="text-xs font-extrabold text-emerald-600" x-text="formatRupiah(tp.revenue)"></span>
+                    </div>
+                </template>
             </div>
-            <a href="{{ url('/riwayat') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">
-                Lihat Semua →
-            </a>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        <th class="py-3 px-4">Tanggal</th>
-                        <th class="py-3 px-4">No. Struk</th>
-                        <th class="py-3 px-4">Kasir / Pelanggan</th>
-                        <th class="py-3 px-4">Ringkasan Produk</th>
-                        <th class="py-3 px-4 text-right">Total Bayar</th>
-                        <th class="py-3 px-4 text-center">Metode</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
-                    <template x-for="item in riwayatTerbaru" :key="item.id">
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="py-3.5 px-4 font-mono text-slate-500" x-text="item.tanggal"></td>
-                            <td class="py-3.5 px-4 font-mono font-bold text-slate-800" x-text="item.noStruk"></td>
-                            <td class="py-3.5 px-4 font-semibold text-slate-800" x-text="item.pelanggan"></td>
-                            <td class="py-3.5 px-4 text-slate-600" x-text="item.produk"></td>
-                            <td class="py-3.5 px-4 text-right font-bold text-emerald-700" x-text="formatRupiah(item.total)"></td>
-                            <td class="py-3.5 px-4 text-center">
-                                <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase"
-                                      :class="{
-                                        'bg-emerald-100 text-emerald-700': item.metode === 'Tunai',
-                                        'bg-blue-100 text-blue-700': item.metode === 'QRIS',
-                                        'bg-purple-100 text-purple-700': item.metode === 'Debit'
-                                      }"
-                                      x-text="item.metode">
-                                </span>
-                            </td>
+        <!-- Recent Sales Table (7 COL) -->
+        <div class="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-sm font-bold text-slate-800">Transaksi Terbaru</h2>
+                <a href="{{ route('riwayat-penjualan.index') }}" class="text-xs font-bold text-emerald-600 hover:underline">Lihat Semua</a>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                            <th class="pb-2">Invoice</th>
+                            <th class="pb-2">Kasir</th>
+                            <th class="pb-2">Total</th>
+                            <th class="pb-2">Metode</th>
+                            <th class="pb-2 text-right">Waktu</th>
                         </tr>
-                    </template>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="sale in recentSales" :key="sale.id">
+                            <tr class="hover:bg-slate-50/80">
+                                <td class="py-2.5 font-bold text-slate-800" x-text="sale.invoice_number"></td>
+                                <td class="py-2.5 text-slate-600 uppercase" x-text="sale.cashier_name"></td>
+                                <td class="py-2.5 font-extrabold text-emerald-600" x-text="formatRupiah(sale.total)"></td>
+                                <td class="py-2.5">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-slate-100 text-slate-700"
+                                          x-text="sale.payments?.[0]?.method || 'cash'"></span>
+                                </td>
+                                <td class="py-2.5 text-right text-slate-400 text-[10px]" x-text="formatTanggal(sale.created_at)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -186,89 +176,131 @@
 
 @push('scripts')
 <script>
-    function dashboardData() {
+    function dashboardManager() {
         return {
-            filterPeriode: 'month',
-            stats: {
-                totalOmzet: 841891064,
-                totalTransaksi: 1245,
-                totalProdukTerjual: 3890,
-                rataRataNota: 676200
-            },
-            riwayatTerbaru: [
-                { id: 1, tanggal: '2026-09-25 14:20', noStruk: 'STR-20260925-001', pelanggan: 'Umum (Walk-in)', produk: 'Indomie Goreng (x5), Aqua 600ml (x2)', total: 22500, metode: 'Tunai' },
-                { id: 2, tanggal: '2026-09-28 15:05', noStruk: 'STR-20260928-012', pelanggan: 'PT. Lamtana Multijaya', produk: 'Minyak Bimoli 2L (x10), Beras 5kg (x2)', total: 533000, metode: 'QRIS' },
-                { id: 3, tanggal: '2026-10-07 10:11', noStruk: 'STR-20261007-005', pelanggan: 'R.S. Bhayangkara', produk: 'Tisu Paseo (x20), Deterjen Rinso (x5)', total: 390000, metode: 'Debit' },
-                { id: 4, tanggal: '2026-10-12 18:45', noStruk: 'STR-20261012-044', pelanggan: 'Dwi Nur Fitasari', produk: 'Silverqueen 58g (x3), Teh Pucuk (x4)', total: 65500, metode: 'Tunai' },
-                { id: 5, tanggal: '2026-10-20 09:30', noStruk: 'STR-20261020-002', pelanggan: 'Kak Aris', produk: 'Susu Ultra Milk 250ml (x12)', total: 90000, metode: 'QRIS' }
-            ],
+            filterFrom: '',
+            filterTo: '',
+            isLoading: false,
+            summary: {},
+            salesTrend: [],
+            recentSales: [],
+            topProducts: [],
+            paymentMethods: [],
+            trendChart: null,
+            paymentChart: null,
 
-            formatRupiah(number) {
-                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number);
-            },
-
-            // Alpine.js akan otomatis menjalankan fungsi init() ini ketika komponen siap
             init() {
-                this.$nextTick(() => {
-                    this.renderCharts();
-                });
+                // Set default tanggal dari bulan ini
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                
+                this.filterFrom = firstDay.toISOString().split('T')[0];
+                this.filterTo = now.toISOString().split('T')[0];
+
+                this.loadData();
             },
 
-            renderCharts() {
-                // 1. Grafik Bar Penjualan
-                const ctxBar = document.getElementById('barChartPenjualan');
-                if (ctxBar) {
-                    new Chart(ctxBar, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                            datasets: [{
-                                label: 'Omzet Penjualan (Rp)',
-                                data: [82000000, 105000000, 88000000, 55000000, 92000000, 108000000, 64000000, 180000000, 50000000, 0, 0, 0],
-                                backgroundColor: '#059669',
-                                borderRadius: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
-                            scales: {
-                                y: {
-                                    ticks: {
-                                        callback: function(value) { return 'Rp ' + (value/1000000) + 'Jt'; }
-                                    }
+            async loadData() {
+                this.isLoading = true;
+
+                // Parameter 'to' ditambah 1 hari untuk menyesuaikan sifat exclusive API
+                let adjustedTo = new Date(this.filterTo);
+                adjustedTo.setDate(adjustedTo.getDate() + 1);
+                const toQuery = adjustedTo.toISOString().split('T')[0];
+
+                try {
+                    const res = await fetch(`{{ route('dashboard.data') }}?from=${this.filterFrom}&to=${toQuery}`);
+                    const json = await res.json();
+
+                    if (res.ok && json.data) {
+                        const d = json.data;
+                        this.summary = d.summary || {};
+                        this.salesTrend = d.sales_trend || [];
+                        this.recentSales = d.recent_sales || [];
+                        this.topProducts = d.top_products || [];
+                        this.paymentMethods = d.payment_methods || [];
+
+                        this.renderTrendChart();
+                        this.renderPaymentChart();
+                    }
+                } catch (e) {
+                    console.error('Gagal memuat data dashboard:', e);
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            renderTrendChart() {
+                const ctx = document.getElementById('salesTrendChart').getContext('2d');
+                if (this.trendChart) this.trendChart.destroy();
+
+                const labels = this.salesTrend.map(i => i.date);
+                const revenues = this.salesTrend.map(i => i.revenue);
+
+                this.trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Omset (Rp)',
+                            data: revenues,
+                            borderColor: '#059669',
+                            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                ticks: {
+                                    callback: value => 'Rp ' + value.toLocaleString('id-ID')
                                 }
                             }
                         }
-                    });
-                }
-
-                // 2. Grafik Pie / Donut Terlaris
-                const ctxPie = document.getElementById('pieChartTerlaris');
-                if (ctxPie) {
-                    new Chart(ctxPie, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Sembako', 'Minuman', 'Snack', 'Perawatan Diri', 'Kebersihan'],
-                            datasets: [{
-                                data: [1244, 981, 651, 114, 125],
-                                backgroundColor: ['#f59e0b', '#3b82f6', '#ef4444', '#a855f7', '#10b981']
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
-                            }
-                        }
-                    });
-                }
+                    }
+                });
             },
 
-            updateDashboard() {
-                alert('Filter periode diubah menjadi: ' + this.filterPeriode);
+            renderPaymentChart() {
+                const ctx = document.getElementById('paymentMethodChart').getContext('2d');
+                if (this.paymentChart) this.paymentChart.destroy();
+
+                const labels = this.paymentMethods.map(i => i.method.toUpperCase());
+                const revenues = this.paymentMethods.map(i => i.revenue);
+
+                this.paymentChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: revenues,
+                            backgroundColor: ['#059669', '#2563eb', '#9333ea', '#f59e0b'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            },
+
+            formatRupiah(val) {
+                if (!val && val !== 0) return 'Rp 0';
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+            },
+
+            formatTanggal(dateStr) {
+                if (!dateStr) return '-';
+                const d = new Date(dateStr);
+                return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
             }
         }
     }
