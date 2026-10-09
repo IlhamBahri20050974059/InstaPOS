@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\RiwayatPenjualanController;
+use App\Http\Controllers\DashboardController;
 
 // Guest Routes (Bisa diakses tanpa login)
 Route::get('/', function () {
@@ -20,9 +21,8 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 // Protected Routes (Wajib Login dulu)
 Route::middleware([CheckAuth::class])->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
 
    Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
 
