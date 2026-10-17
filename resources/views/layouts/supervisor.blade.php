@@ -19,6 +19,7 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased" x-data="{ sidebarOpen: true }">
@@ -47,7 +48,7 @@
                     </div>
 
                     <!-- Menu Utama Supervisor -->
-                    <nav class="mt-4 px-3 space-y-1.5">
+                    <nav class="mt-4 px-3 space-y-1.5 overflow-y-auto max-h-[calc(100vh-12rem)]">
 
                         <!-- 1. Dashboard -->
                         <a href="{{ request()->is('dashboard') ? '#' : url('/dashboard') }}"
@@ -67,7 +68,7 @@
                             <span class="ml-3 truncate" x-show="sidebarOpen">Produk</span>
                         </a>
 
-                        <!-- 3. Kategori (BARU) -->
+                        <!-- 3. Kategori -->
                         <a href="{{ url('/kategori') }}"
                            class="flex items-center px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('kategori*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,6 +112,59 @@
                             </svg>
                             <span class="ml-3 truncate" x-show="sidebarOpen">Riwayat Penjualan</span>
                         </a>
+
+                        <!-- ================= 8. DROPDOWN LAPORAN ================= -->
+<div x-data="{ reportsOpen: @json(request()->is('laporan*')) }">
+    <!-- Tombol Trigger Dropdown -->
+    <button @click="reportsOpen = !reportsOpen"
+            class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition text-sm font-medium {{ request()->is('laporan*') ? 'bg-slate-800 text-white' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="ml-3 truncate" x-show="sidebarOpen">Laporan</span>
+        </div>
+        <svg class="w-4 h-4 transition-transform duration-200"
+             :class="reportsOpen ? 'rotate-180' : ''"
+             x-show="sidebarOpen"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+    </button>
+
+    <!-- Isi Submenu Dropdown Laporan -->
+    <div x-show="reportsOpen && sidebarOpen" x-cloak class="mt-1 pl-9 space-y-1">
+        <!-- 8.1 Laporan Penjualan -->
+        <a href="{{ url('/laporan/penjualan') }}"
+           class="block py-2 px-3 rounded-lg text-xs font-medium transition {{ request()->is('laporan/penjualan*') ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+            Penjualan
+        </a>
+
+        <!-- 8.2 Laporan Produk -->
+        <a href="{{ url('/laporan/produk') }}"
+           class="block py-2 px-3 rounded-lg text-xs font-medium transition {{ request()->is('laporan/produk*') ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+            Produk
+        </a>
+
+        <!-- 8.3 Laporan Member -->
+        <a href="{{ url('/laporan/member') }}"
+           class="block py-2 px-3 rounded-lg text-xs font-medium transition {{ request()->is('laporan/member*') ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+            Member
+        </a>
+
+        <!-- 8.4 Laporan Pembelian -->
+        <a href="{{ url('/laporan/pembelian') }}"
+           class="block py-2 px-3 rounded-lg text-xs font-medium transition {{ request()->is('laporan/pembelian*') ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+            Pembelian
+        </a>
+
+        <!-- 8.5 Laporan Supplier -->
+        <a href="{{ url('/laporan/supplier') }}"
+           class="block py-2 px-3 rounded-lg text-xs font-medium transition {{ request()->is('laporan/supplier*') ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+            Supplier
+        </a>
+    </div>
+</div>
 
                     </nav>
                 </div>
