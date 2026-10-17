@@ -7,8 +7,9 @@ use App\Http\Middleware\CheckAuth;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\KategoriController;
-use App\Http\Controllers\RiwayatPenjualanController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RiwayatPenjualanController;
+use App\Http\Controllers\LaporanPenjualanController;
 
 // Guest Routes (Bisa diakses tanpa login)
 Route::get('/', function () {
@@ -75,4 +76,9 @@ Route::prefix('supplier')->name('suppliers.')->group(function () {
     Route::post('/kategori', [KategoriController::class, 'store'])->name('kategori.store');
     Route::patch('/kategori/{id}', [KategoriController::class, 'update'])->name('kategori.update');
 
+
+    Route::get('/laporan/penjualan', [LaporanPenjualanController::class, 'index'])->name('laporan.penjualan.index');
+    Route::get('/laporan/penjualan/data', [LaporanPenjualanController::class, 'data'])->name('laporan.penjualan.data');
+    Route::get('/laporan/penjualan/export-pdf', [LaporanPenjualanController::class, 'exportPdf'])->name('laporan.penjualan.export-pdf');
+    Route::get('/laporan/penjualan/export-csv', [LaporanPenjualanController::class, 'exportCsv'])->name('laporan.penjualan.export-csv');
 });
